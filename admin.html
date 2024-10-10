@@ -1,0 +1,552 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin</title>
+    <style>
+        /* styles.css */
+
+/* Reset some basic styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family:'Times New Roman', Times, serif;
+    background-color: #f35e5e;
+}
+
+/* Navbar Styles */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #48010e;
+    color: #fff;
+    padding: 10px 20px;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+}
+
+.company-name {
+    flex-grow: 1;
+    text-align: center;
+    font-size: 24px;
+}
+
+.navbar button {
+    background-color: #f44336;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.navbar button:hover {
+    background-color: #d32f2f;
+}
+
+/* Container Styles */
+.container {
+    max-width: 800px;
+    margin: 30px auto;
+    background-color: #cccccc;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h2, h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Form Styles */
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+form label {
+    margin: 10px 0 5px;
+    color: #555;
+}
+
+form input, form select, form textarea {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+form button {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #5512bb;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+form button:hover {
+    background-color: #000040;
+}
+
+/* Table Styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+tr:nth-child(even){
+    background-color: #f9f9f9;
+}
+
+/* Button Styles */
+button {
+    padding: 8px 12px;
+    background-color: #008CBA;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover {
+    background-color: #007B9E;
+}
+
+/* Message Styles */
+#message, #adminMessage, #employeeMessage {
+    margin-top: 15px;
+    font-size: 16px;
+    color: rgb(140, 48, 5);
+}
+
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <img src="transactix-high-resolution-logo-white-transparent.png" alt="Company Logo" class="logo">
+        <h1 class="company-name">Transactix</h1>
+        <button id="logoutBtn">Logout</button>
+    </div>
+
+    <div class="container">
+        <h2>Admin Dashboard</h2>
+
+        <section id="assignTaskSection">
+            <h3>Assign Task</h3>
+            <form id="assignTaskForm">
+                <label for="taskTitle">Task Title:</label>
+                <input type="text" id="taskTitle" required>
+
+                <label for="taskDescription">Description:</label>
+                <textarea id="taskDescription" required></textarea>
+
+                <label for="assignTo">Assign To:</label>
+                <select id="assignTo" required>
+                    <!-- Options populated by JavaScript -->
+                </select>
+
+                <label for="dueDate">Due Date:</label>
+                <input type="date" id="dueDate" required>
+
+                <button type="submit">Assign Task</button>
+            </form>
+        </section>
+
+        <section id="attendanceSection">
+            <h3>Attendance Records</h3>
+            <table id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows populated by JavaScript -->
+                </tbody>
+            </table>
+        </section>
+
+        <section id="tasksSection">
+            <h3>All Tasks</h3>
+            <table id="tasksTable">
+                <thead>
+                    <tr>
+                        <th>Title of task</th>
+                        <th>Description of task</th>
+                        <th>Given to</th>
+                        <th>Submission date</th>
+                        <th>Status</th>
+                        <th>Completed On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows populated by JavaScript -->
+                </tbody>
+            </table>
+        </section>
+
+        <p id="adminMessage"></p>
+    </div>
+
+    <script>
+        /* script.js */
+
+/* ----------------------------
+   Utility Functions
+   ---------------------------- */
+
+// Function to display messages
+function displayMessage(elementId, message, isError = false) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.color = isError ? 'red' : 'green';
+        element.textContent = message;
+        setTimeout(() => {
+            element.textContent = '';
+        }, 3000);
+    }
+}
+
+// Function to check if users exist in LocalStorage, if not, create default admin
+function initializeUsers() {
+    if (!localStorage.getItem('users')) {
+        const defaultUsers = [
+            {
+                username: 'admin',
+                password: 'admin0123', // In real applications, passwords should be hashed
+                role: 'admin'
+            },
+            {
+                username: 'employee',
+                password: 'employee0123',
+                role: 'employee'
+            },
+            {
+                username: 'employee2',
+                password: 'emp123',
+                role: 'employee'
+            }
+        ];
+        localStorage.setItem('users', JSON.stringify(defaultUsers));
+    }
+}
+
+// Function to get current logged-in user
+function getCurrentUser() {
+    return JSON.parse(sessionStorage.getItem('currentUser'));
+}
+
+// Function to set current logged-in user
+function setCurrentUser(user) {
+    sessionStorage.setItem('currentUser', JSON.stringify(user));
+}
+
+// Function to logout user
+function logout() {
+    sessionStorage.removeItem('currentUser');
+    window.location.href = 'homepage.html';
+}
+
+/* ----------------------------
+   Initialization
+   ---------------------------- */
+
+// Initialize default users on first load
+initializeUsers();
+
+/* ----------------------------
+   Login Functionality
+   ---------------------------- */
+
+const loginForm = document.getElementById('loginForm');
+if (loginForm) {
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const role = document.getElementById('role').value;
+
+        const users = JSON.parse(localStorage.getItem('users')) || [];
+        const user = users.find(u => u.username === username && u.password === password && u.role === role);
+
+        if (user) {
+            setCurrentUser(user);
+            if (role === 'admin') {
+                window.location.href = 'admin.html';
+            } else if (role === 'employee') {
+                window.location.href = 'employee.html';
+            }
+        } else {
+            displayMessage('message', 'Invalid credentials or role selected', true);
+        }
+    });
+}
+
+/* ----------------------------
+   Logout Functionality
+   ---------------------------- */
+
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', function() {
+        logout();
+    });
+}
+
+/* ----------------------------
+   Admin Dashboard Functionality
+   ---------------------------- */
+
+if (window.location.pathname.endsWith('admin.html')) {
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+        logout();
+    }
+
+    // Populate Assign To dropdown with employees
+    const assignToSelect = document.getElementById('assignTo');
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    const employees = users.filter(u => u.role === 'employee');
+    employees.forEach(emp => {
+        const option = document.createElement('option');
+        option.value = emp.username;
+        option.textContent = emp.username;
+        assignToSelect.appendChild(option);
+    });
+
+    // Handle Assign Task Form Submission
+    const assignTaskForm = document.getElementById('assignTaskForm');
+    assignTaskForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const title = document.getElementById('taskTitle').value.trim();
+        const description = document.getElementById('taskDescription').value.trim();
+        const assignedTo = document.getElementById('assignTo').value;
+        const dueDate = document.getElementById('dueDate').value;
+
+        if (!title || !description || !assignedTo || !dueDate) {
+            displayMessage('adminMessage', 'Please fill in all fields', true);
+            return;
+        }
+
+        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        const newTask = {
+            id: Date.now(),
+            title,
+            description,
+            assignedTo,
+            dueDate,
+            status: 'Pending',
+            completedAt: null
+        };
+        tasks.push(newTask);
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+
+        displayMessage('adminMessage', 'Task assigned successfully');
+        assignTaskForm.reset();
+        loadTasks();
+    });
+
+    // Load Attendance Records
+    function loadAttendance() {
+        const attendanceTableBody = document.querySelector('#attendanceTable tbody');
+        attendanceTableBody.innerHTML = '';
+        const attendance = JSON.parse(localStorage.getItem('attendance')) || [];
+
+        attendance.forEach(record => {
+            const tr = document.createElement('tr');
+
+            const usernameTd = document.createElement('td');
+            usernameTd.textContent = record.username;
+            tr.appendChild(usernameTd);
+
+            const dateTd = document.createElement('td');
+            dateTd.textContent = record.date;
+            tr.appendChild(dateTd);
+
+            const timeTd = document.createElement('td');
+            timeTd.textContent = record.time;
+            tr.appendChild(timeTd);
+
+            attendanceTableBody.appendChild(tr);
+        });
+    }
+
+    // Load All Tasks
+    function loadTasks() {
+        const tasksTableBody = document.querySelector('#tasksTable tbody');
+        tasksTableBody.innerHTML = '';
+        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+        tasks.forEach(task => {
+            const tr = document.createElement('tr');
+
+            const titleTd = document.createElement('td');
+            titleTd.textContent = task.title;
+            tr.appendChild(titleTd);
+
+            const descTd = document.createElement('td');
+            descTd.textContent = task.description;
+            tr.appendChild(descTd);
+
+            const assignedToTd = document.createElement('td');
+            assignedToTd.textContent = task.assignedTo;
+            tr.appendChild(assignedToTd);
+
+            const dueDateTd = document.createElement('td');
+            dueDateTd.textContent = task.dueDate;
+            tr.appendChild(dueDateTd);
+
+            const statusTd = document.createElement('td');
+            statusTd.textContent = task.status;
+            tr.appendChild(statusTd);
+
+            const completedAtTd = document.createElement('td');
+            completedAtTd.textContent = task.completedAt ? task.completedAt : 'N/A';
+            tr.appendChild(completedAtTd);
+
+            tasksTableBody.appendChild(tr);
+        });
+    }
+
+    // Initial Load
+    loadAttendance();
+    loadTasks();
+}
+
+/* ----------------------------
+   Employee Dashboard Functionality
+   ---------------------------- */
+
+if (window.location.pathname.endsWith('employee.html')) {
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'employee') {
+        logout();
+    }
+
+    const markAttendanceBtn = document.getElementById('markAttendanceBtn');
+
+    // Handle Mark Attendance
+    markAttendanceBtn.addEventListener('click', function() {
+        const attendance = JSON.parse(localStorage.getItem('attendance')) || [];
+
+        // Check if attendance already marked today
+        const today = new Date().toISOString().split('T')[0];
+        const alreadyMarked = attendance.some(record => record.username === currentUser.username && record.date === today);
+
+        if (alreadyMarked) {
+            displayMessage('employeeMessage', 'Attendance already marked today', true);
+            return;
+        }
+
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        attendance.push({
+            username: currentUser.username,
+            date: today,
+            time
+        });
+        localStorage.setItem('attendance', JSON.stringify(attendance));
+
+        displayMessage('employeeMessage', 'Attendance marked successfully');
+    });
+
+    // Load Assigned Tasks
+    function loadEmployeeTasks() {
+        const employeeTasksTableBody = document.querySelector('#employeeTasksTable tbody');
+        employeeTasksTableBody.innerHTML = '';
+        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+        const assignedTasks = tasks.filter(task => task.assignedTo === currentUser.username);
+
+        assignedTasks.forEach(task => {
+            const tr = document.createElement('tr');
+
+            const titleTd = document.createElement('td');
+            titleTd.textContent = task.title;
+            tr.appendChild(titleTd);
+
+            const descTd = document.createElement('td');
+            descTd.textContent = task.description;
+            tr.appendChild(descTd);
+
+            const dueDateTd = document.createElement('td');
+            dueDateTd.textContent = task.dueDate;
+            tr.appendChild(dueDateTd);
+
+            const statusTd = document.createElement('td');
+            statusTd.textContent = task.status;
+            tr.appendChild(statusTd);
+
+            const completedAtTd = document.createElement('td');
+            completedAtTd.textContent = task.completedAt ? task.completedAt : 'N/A';
+            tr.appendChild(completedAtTd);
+
+            const actionTd = document.createElement('td');
+            if (task.status === 'Pending') {
+                const completeBtn = document.createElement('button');
+                completeBtn.textContent = 'Mark as Completed';
+                completeBtn.addEventListener('click', function() {
+                    markTaskAsCompleted(task.id);
+                });
+                actionTd.appendChild(completeBtn);
+            } else {
+                actionTd.textContent = 'Completed';
+            }
+            tr.appendChild(actionTd);
+
+            employeeTasksTableBody.appendChild(tr);
+        });
+    }
+
+    // Function to mark task as completed
+    function markTaskAsCompleted(taskId) {
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        tasks = tasks.map(task => {
+            if (task.id === taskId) {
+                task.status = 'Completed';
+                task.completedAt = new Date().toLocaleString();
+            }
+            return task;
+        });
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        displayMessage('employeeMessage', 'Task marked as completed');
+        loadEmployeeTasks();
+    }
+
+    // Initial Load
+    loadEmployeeTasks();
+}
+
+    </script>
+</body>
+</html>
